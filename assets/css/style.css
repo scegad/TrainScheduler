@@ -1,0 +1,16 @@
+form {
+	padding: 10px;
+}
+
+th,td {
+	text-align: center;
+}
+
+.jumbotron {
+	background-color: #7e462f;
+	color: #dfeef6;
+}
+
+.inputValidationFailed {
+	background-color: #ff9999;
+}

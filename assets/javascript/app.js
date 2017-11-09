@@ -55,6 +55,9 @@ class App {
           let trainRow = $('tr[data-id=' + trainId + ']');
           trainRow.find('.nextArrival').text(this.trains[trainId].scheduleClock);
 
+          let minsAway = moment().to(clock);
+          trainRow.find('.minsAway').text(minsAway);
+
         };
       };
 
@@ -132,7 +135,37 @@ class App {
 
   _onNewTrainAdded(snapshot) {
     if (this.isAppInitialized) {
-      console.log("New train added: " + snapshot.val());
+      let newTrain = snapshot.val();
+      let scheduleTbl = this.dom.scheduleTbl;
+
+      console.log("New train added: " );
+      console.log(newTrain);
+
+      let startHour = newTrain.startTime.split(':')[0];
+      let startMin = newTrain.startTime.split(':')[1];
+      let startTime = moment().hour(startHour).minute(startMin).second(0).format();
+
+      this.trains.push({ name: newTrain.name, dest: newTrain.dest, startTime: startTime, freq: newTrain.freq });
+
+      let newRow = $(
+        "<tr><td>" + 
+        newTrain.name + 
+        "</td><td>" +
+        newTrain.dest +
+        "</td><td>" +
+        newTrain.freq +
+        "</td><td class='nextArrival'>" +
+        // Next Arrival
+        "</td><td class='minsAway'>" +
+        // Minutes Away
+        "</td></tr>");
+
+      newRow.attr('data-id', this.trains.length - 1);
+
+      scheduleTbl.append(newRow);
+
+      this.updateDepartures();
+
     };
   }
 
@@ -145,12 +178,6 @@ $(document).ready(function() {
   app = new App();
 });
 
-/*
 
-
-  
-
-
-**/
 
 

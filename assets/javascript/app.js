@@ -24,6 +24,7 @@ class App {
     this._onNewTrainSubmit = this._onNewTrainSubmit.bind(this);
     this._onInitialDataLoad = this._onInitialDataLoad.bind(this);
     this._onNewTrainAdded = this._onNewTrainAdded.bind(this);
+    this.updateDepartures = this.updateDepartures.bind(this);
 
     // Arm event handlers
     this.dom.newTrainForm.on('submit', this._onNewTrainSubmit);
@@ -31,6 +32,8 @@ class App {
       (err) => { console.log(err) });
     this.database.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", this._onNewTrainAdded, 
       (err) => { console.log(err) });
+
+    this.updateIntervalId = setInterval(this.updateDepartures, 60 * 1000);
 
   }
 
@@ -51,11 +54,11 @@ class App {
         if (this.trains[trainId].scheduleClock.isBefore(curTime)) {
           setTimeout(clockTick.bind(this, trainId), 0);
         } else {
-          console.log("Next train is at: " + moment(this.trains[trainId].scheduleClock).format());
+          console.log("Next train is at: " + moment(this.trains[trainId].scheduleClock).format('HH:mm'));
           let trainRow = $('tr[data-id=' + trainId + ']');
-          trainRow.find('.nextArrival').text(this.trains[trainId].scheduleClock);
+          trainRow.find('.nextArrival').text(moment(this.trains[trainId].scheduleClock).format('HH:mm'));
 
-          let minsAway = moment().to(clock);
+          let minsAway = clock.diff(moment(), 'minutes');
           trainRow.find('.minsAway').text(minsAway);
 
         };

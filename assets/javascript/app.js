@@ -15,6 +15,8 @@ class App {
       frequencyInput: $("#frequencyInput")
     }
 
+    this.trains = [];
+
     // Have we initialized and loaded data already?
     this.isAppInitialized = false;
 
@@ -32,8 +34,34 @@ class App {
 
   }
 
-  getNextDeparture(startTimeMoment, curTimeMoment, freqMoment) {
-    return moment().add(moment(99, 'minutes'));
+  updateDepartures() {
+
+    for (let i = 0; i < this.trains.length; i++) {
+
+      this.trains[i].scheduleClock = moment(this.trains[i].startTime).format();
+      let curTime = moment();
+      let nextDeparture = NaN;
+
+      let clockTick = function(trainId) {        
+        let clock = moment(this.trains[trainId].scheduleClock);
+        let freqMins = this.trains[trainId].freq;
+        clock = moment(clock).add(freqMins, 'minutes');
+        this.trains[trainId].scheduleClock = clock;
+
+        if (this.trains[trainId].scheduleClock.isBefore(curTime)) {
+          setTimeout(clockTick.bind(this, trainId), 0);
+        } else {
+          console.log("Next train is at: " + moment(this.trains[trainId].scheduleClock).format());
+          let trainRow = $('tr[data-id=' + trainId + ']');
+          trainRow.find('.nextArrival').text(this.trains[trainId].scheduleClock);
+
+        };
+      };
+
+      clockTick = clockTick.bind(this);
+      clockTick(i);
+
+    }
   }
 
   _onNewTrainSubmit(e) {
@@ -68,8 +96,8 @@ class App {
 
   _onInitialDataLoad(snapshot) {
     let trainData = snapshot.val();
+    let scheduleArr = this.trains;
     let scheduleTbl = this.dom.scheduleTbl;
-    let getNextDeparture = this.getNextDeparture;
     let currentTime = moment();
 
     $.each(trainData, function(index,value) {
@@ -78,7 +106,7 @@ class App {
       let startMin = train.startTime.split(':')[1];
       let startTime = moment().hour(startHour).minute(startMin).second(0).format();
 
-      let nextDeparture = getNextDeparture(startTime, currentTime, train.freq);
+      scheduleArr.push({ name: train.name, dest: train.dest, startTime: startTime, freq: train.freq });
 
       var newRow = $(
         "<tr><td>" + 
@@ -87,14 +115,19 @@ class App {
         train.dest +
         "</td><td>" +
         train.freq +
-        "</td><td>" +
-        nextDeparture.format('MMMM Do YYYY, h:mm:ss a') +
-        "</td><td>" +
-        nextDeparture.diff(currentTime, 'minutes', true) +
+        "</td><td class='nextArrival'>" +
+        // Next Arrival
+        "</td><td class='minsAway'>" +
+        // Minutes Away
         "</td></tr>");
+
+      newRow.attr('data-id', scheduleArr.length - 1);
+
       scheduleTbl.append(newRow);
     });
     this.isAppInitialized = true;
+
+    this.updateDepartures();
   }
 
   _onNewTrainAdded(snapshot) {

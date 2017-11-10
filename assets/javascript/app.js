@@ -1,3 +1,14 @@
+
+var firebaseConfig = {
+  apiKey: "AIzaSyB7k-tyAYlhQkwslbHg8xuKcJs63nx9lS4",
+  authDomain: "trainschedulerapp-5d341.firebaseapp.com",
+  databaseURL: "https://trainschedulerapp-5d341.firebaseio.com",
+  projectId: "trainschedulerapp-5d341",
+  storageBucket: "",
+  messagingSenderId: "563112643952"
+};
+
+
 class App {
   constructor() {
 

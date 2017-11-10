@@ -1,4 +1,6 @@
 
+// Temporary API key included for assignment submission.
+// Firebase project will be deleted when done.
 var firebaseConfig = {
   apiKey: "AIzaSyB7k-tyAYlhQkwslbHg8xuKcJs63nx9lS4",
   authDomain: "trainschedulerapp-5d341.firebaseapp.com",

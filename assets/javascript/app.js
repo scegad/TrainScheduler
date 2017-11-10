@@ -24,10 +24,12 @@ class App {
     this._onNewTrainSubmit = this._onNewTrainSubmit.bind(this);
     this._onInitialDataLoad = this._onInitialDataLoad.bind(this);
     this._onNewTrainAdded = this._onNewTrainAdded.bind(this);
+    this._onDeleteClick = this._onDeleteClick.bind(this);
     this.updateDepartures = this.updateDepartures.bind(this);
 
     // Arm event handlers
     this.dom.newTrainForm.on('submit', this._onNewTrainSubmit);
+    this.dom.scheduleTbl.on('click', '.glyphicon-trash', this._onDeleteClick);
     this.database.ref().once('value', this._onInitialDataLoad, 
       (err) => { console.log(err) });
     this.database.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", this._onNewTrainAdded, 
@@ -40,6 +42,10 @@ class App {
   updateDepartures() {
 
     for (let i = 0; i < this.trains.length; i++) {
+
+      if (this.trains[i].deleted) {
+        continue;
+      }
 
       this.trains[i].scheduleClock = moment(this.trains[i].startTime).format();
       let curTime = moment();
@@ -54,7 +60,6 @@ class App {
         if (this.trains[trainId].scheduleClock.isBefore(curTime)) {
           setTimeout(clockTick.bind(this, trainId), 0);
         } else {
-          console.log("Next train is at: " + moment(this.trains[trainId].scheduleClock).format('HH:mm'));
           let trainRow = $('tr[data-id=' + trainId + ']');
           trainRow.find('.nextArrival').text(moment(this.trains[trainId].scheduleClock).format('HH:mm'));
 
@@ -112,19 +117,27 @@ class App {
       let startMin = train.startTime.split(':')[1];
       let startTime = moment().hour(startHour).minute(startMin).second(0).format();
 
-      scheduleArr.push({ name: train.name, dest: train.dest, startTime: startTime, freq: train.freq });
+      scheduleArr.push({ 
+        name: train.name,
+        dest: train.dest, 
+        startTime: startTime, 
+        freq: train.freq, 
+        deleted: false, 
+        key: index});
 
       var newRow = $(
-        "<tr><td>" + 
+        "<tr><td class='trainName'>" + 
         train.name + 
-        "</td><td>" +
+        "</td><td class='trainDest'>" +
         train.dest +
-        "</td><td>" +
+        "</td><td class='trainFreq'>" +
         train.freq +
         "</td><td class='nextArrival'>" +
         // Next Arrival
         "</td><td class='minsAway'>" +
         // Minutes Away
+        //"</td><td>" +
+        //"<span class='glyphicon glyphicon-trash'></span>" +
         "</td></tr>");
 
       newRow.attr('data-id', scheduleArr.length - 1);
@@ -137,30 +150,39 @@ class App {
   }
 
   _onNewTrainAdded(snapshot) {
+    console.log(this.trains.indexOf(snapshot.key));
+
     if (this.isAppInitialized) {
       let newTrain = snapshot.val();
       let scheduleTbl = this.dom.scheduleTbl;
 
-      console.log("New train added: " );
-      console.log(newTrain);
+      console.log("New train added: " + snapshot.key);
 
       let startHour = newTrain.startTime.split(':')[0];
       let startMin = newTrain.startTime.split(':')[1];
       let startTime = moment().hour(startHour).minute(startMin).second(0).format();
 
-      this.trains.push({ name: newTrain.name, dest: newTrain.dest, startTime: startTime, freq: newTrain.freq });
+      this.trains.push({ 
+        name: newTrain.name, 
+        dest: newTrain.dest, 
+        startTime: startTime, 
+        freq: newTrain.freq, 
+        deleted: false,
+        key: snapshot.key });
 
       let newRow = $(
-        "<tr><td>" + 
+        "<tr><td class='trainName'>" + 
         newTrain.name + 
-        "</td><td>" +
+        "</td><td class='trainDest'>" +
         newTrain.dest +
-        "</td><td>" +
+        "</td><td class='trainFreq'>" +
         newTrain.freq +
         "</td><td class='nextArrival'>" +
         // Next Arrival
         "</td><td class='minsAway'>" +
         // Minutes Away
+        //"</td><td>" +
+        //"<span class='glyphicon glyphicon-trash'></span>" +
         "</td></tr>");
 
       newRow.attr('data-id', this.trains.length - 1);
@@ -170,6 +192,16 @@ class App {
       this.updateDepartures();
 
     };
+  }
+
+  _onDeleteClick(e) {
+    
+    let trainRow = $(e.target).closest('tr');
+    let trainId = trainRow.attr('data-id');
+    console.log("Train Id: " + trainId);
+    this.database.ref('/' + this.trains[trainId].key).remove();
+    this.trains[trainId].deleted = true;
+    trainRow.remove();
   }
 
 };
